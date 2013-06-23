@@ -1,4 +1,3 @@
-require 'debugger'
 require 'set'
 
 class Hangman
@@ -16,9 +15,11 @@ class Hangman
 		turns_left = 7
 
 		while curr_board.include?("_") && turns_left > -1
-			puts "Game status is: #{curr_board}"
+			puts "Game status is: #{curr_board} (#{curr_board.length} letter word)"
 			puts "You have #{turns_left} turns left."
 			curr_guess = @guesser.make_guess(curr_board)
+			break if curr_guess == "You Cheated!"
+
 			reply_to_guess = @master.reply_to_guess(curr_guess)
 
 			unless reply_to_guess.empty?
@@ -29,10 +30,12 @@ class Hangman
 		end
 
 		if win?(curr_board)
-			puts "The Guesser guessed the word!"
+			puts "The Guesser guessed the word! It was #{curr_board}."
 		else
-			puts "Guesser looses. Master, what was the word?"
-			puts "Master says the word was: #{@master.reveal_word}"
+			puts "Guesser loses. Master, what was the word?"
+			revealed_word = @master.reveal_word
+			puts "Master says the word was: #{revealed_word}"
+			@guesser.respond_to_word(revealed_word)
 		end
 	end
 
@@ -75,6 +78,13 @@ class HumanPlayer
 		puts "The guess is #{curr_guess}"
 		puts "reply with the comma separated indexes that this letter can be found at in your word"
 		gets.chomp.split(",").map { |num| num.to_i }
+	end
+
+	def reveal_word
+		gets.chomp
+	end
+
+	def respond_to_word
 	end
 end
 
@@ -119,8 +129,12 @@ class ComputerPlayer
 			@curr_dict = @dict_hash
 		end
 		@curr_dict.select! { |index, word| word =~ make_regex(curr_board) }
-		p @curr_dict
-		@curr_dict
+
+		wrong_letters = @picked_letters.reject { |letter| curr_board.include?(letter) }
+
+		wrong_letters.each do |letter|
+			@curr_dict.reject! { |index, word| word.include?(letter) }
+		end
 	end
 
 	def pick_letter
@@ -136,9 +150,18 @@ class ComputerPlayer
 
 	def make_guess(curr_board)
 		prune_dict(curr_board)
+		return "You Cheated!" if @curr_dict.empty?
 		guess = pick_letter
 		@picked_letters << guess
 		guess
+	end
+
+	def respond_to_word(word)
+		if @curr_dict.values.include?(word)
+			puts "Computer says: Well played"
+		else
+			puts "Hey, I think you lied earlier, or picked a word that's not in the dictionary"
+		end
 	end
 
 	def read_dict(dictionary = './dictionary.txt', &block)
