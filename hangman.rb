@@ -1,4 +1,5 @@
 require 'debugger'
+require 'set'
 
 class Hangman
 
@@ -109,7 +110,7 @@ class ComputerPlayer
 	end
 
 	def make_regex(curr_board)
-		Regexp.new curr_board.split("").map { |char| char == "_" ? "." : char }.join
+		Regexp.new ("^" + curr_board.split("").map { |char| char == "_" ? "." : char }.join + "$")
 	end
 
 	def prune_dict(curr_board)
@@ -118,6 +119,8 @@ class ComputerPlayer
 			@curr_dict = @dict_hash
 		end
 		@curr_dict.select! { |index, word| word =~ make_regex(curr_board) }
+		p @curr_dict
+		@curr_dict
 	end
 
 	def pick_letter
