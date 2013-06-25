@@ -61,13 +61,29 @@ class HumanPlayer
 
 	def make_guess(board)
 		guess = "invalid_guess"
-		
-		until guess =~ /^.{1}$/
-			puts "Enter a single letter guess"
-			guess = gets.chomp
-		end
+
+    begin
+      get_guess
+    rescue ArgumentError => e
+      puts e.message
+
+      retry
+    end
+
+    # until guess =~ /^.{1}$/
+    #   puts "Enter a single letter guess"
+    #   guess = gets.chomp
+    # end
 		guess
 	end
+
+  def get_guess
+    guess = gets.chomp
+    unless guess =~ /^.{1}$/
+      raise ArgumentError.new("You did not enter a single letter guess")
+    end
+    guess
+  end
 
 	def word_length
 		puts "Master, how long is the word you picked?"
@@ -75,10 +91,23 @@ class HumanPlayer
 	end
 
 	def reply_to_guess(curr_guess)
-		puts "The guess is #{curr_guess}"
-		puts "reply with the comma separated indexes that this letter can be found at in your word"
-		gets.chomp.split(",").map { |num| num.to_i }
+		begin
+      puts "The guess is #{curr_guess}"
+  		puts "reply with the comma separated indexes that this letter can be found at in your word"
+      indicies = get_indicies
+    rescue ArgumentError => e
+      puts e.message
+    end
+    indicies
 	end
+
+  def get_indicies
+    indicies = gets.chomp.split(",")
+    if indicies.any?{|element| element.(/[a-z]/)}
+      raise ArgumentError.new("You cannot enter any letters!!!!!")
+    end
+    indicies.map { |num| num.to_i }
+  end
 
 	def reveal_word
 		gets.chomp
@@ -178,7 +207,7 @@ end
 if $0 == __FILE__
 	game = Hangman.new(
 		master = HumanPlayer.new,
-		guesser = ComputerPlayer.new
+		guesser = HumanPlayer.new
 		)
 	game.play_game
 end
